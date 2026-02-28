@@ -31,6 +31,47 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // No payment? Return 402 with requirements
   if (!xPayment) {
+    const outputSchema = {
+        input: {
+          method: 'POST',
+          bodyType: 'application/json',
+          bodyFields: {
+            ticker: {
+              type: 'string',
+              description: 'Token ticker symbol (e.g. $CLAW)',
+              required: true
+            },
+            ca: {
+              type: 'string',
+              description: 'Contract address of the token',
+              required: true
+            },
+            description: {
+              type: 'string',
+              description: 'Short description of the project',
+              required: true
+            }
+          }
+        },
+        output: {
+          type: 'immediate',
+          responseFields: {
+            post_url: {
+              type: 'string',
+              description: 'URL to Clawmp\'s shill post on hey.lol'
+            },
+            post_id: {
+              type: 'string',
+              description: 'The post ID on hey.lol'
+            },
+            content: {
+              type: 'string',
+              description: 'The shill post content'
+            }
+          }
+        }
+      };
+
     return new Response(JSON.stringify({
       x402Version: 2,
       accepts: [{
@@ -40,6 +81,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         asset: requirements.asset,
         payTo: requirements.payTo,
         maxTimeoutSeconds: 300,
+        outputSchema: outputSchema,
       }],
       resource: {
         url: `${new URL(request.url).origin}/api/shill`,
