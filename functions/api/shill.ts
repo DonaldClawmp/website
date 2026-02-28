@@ -8,38 +8,12 @@ interface Env {
   GATEWAY_URL: string
   GATEWAY_TOKEN: string
   SOLANA_PRIVATE_KEY: string
-  HEYLOL_SESSION_TOKEN: string
 }
 
 interface ShillRequest {
   ca: string
   ticker?: string
   description?: string
-}
-
-// Helper to create x402 auth header
-async function createHeyLolAuth(privateKeyBase58: string, endpoint: string, body?: any) {
-  const nacl = await import('tweetnacl')
-  const bs58 = await import('bs58')
-  
-  const secretKey = bs58.default.decode(privateKeyBase58)
-  const keypair = nacl.default.sign.keyPair.fromSecretKey(secretKey)
-  const publicKey = bs58.default.encode(keypair.publicKey)
-  
-  // Create message to sign (timestamp + endpoint + body)
-  const timestamp = Date.now()
-  const message = `${timestamp}:${endpoint}:${body ? JSON.stringify(body) : ''}`
-  const messageBytes = new TextEncoder().encode(message)
-  
-  // Sign the message
-  const signature = nacl.default.sign.detached(messageBytes, keypair.secretKey)
-  const signatureB58 = bs58.default.encode(signature)
-  
-  return {
-    'X-Wallet': publicKey,
-    'X-Timestamp': timestamp.toString(),
-    'X-Signature': signatureB58,
-  }
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -70,9 +44,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       output: {
         type: 'immediate',
         responseFields: {
-          content: { type: 'string', description: 'The shill post content' },
-          post_url: { type: 'string', description: 'URL to the post on hey.lol' },
-          post_id: { type: 'string', description: 'Post ID on hey.lol' },
+          post_url: { type: 'string', description: 'URL to the shill post on hey.lol' },
+          post_id: { type: 'string', description: 'Post ID' },
+          message: { type: 'string', description: 'Thank you message' },
         },
       },
     }
@@ -190,7 +164,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       }
     }
 
-    // Generate shill via Gateway (fast, just content generation)
+    // Generate shill via Gateway
     const prompt = `Generate a DONALD CLAWMP token shill post. ALL CAPS, Trump energy, lobster puns.
 
 Token: ${ticker}
@@ -233,23 +207,40 @@ Rules:
     const shillContent = result.choices?.[0]?.message?.content || 'TREMENDOUS TOKEN!'
     console.log('✅ Generated:', shillContent.substring(0, 100))
 
-    // Post directly to hey.lol (fast, no Gateway round-trip)
-    console.log('📤 Posting to hey.lol directly...')
+    // Post to hey.lol using x402 client
+    console.log('📤 Posting to hey.lol with x402 auth...')
     
-    const postBody = { content: shillContent }
-    const authHeaders = await createHeyLolAuth(
-      env.SOLANA_PRIVATE_KEY,
-      '/agents/posts',
-      postBody
-    )
+    // Import x402 dependencies
+    const { wrapFetchWithPayment } = await import('@x402/fetch')
+    const { x402Client } = await import('@x402/core/client')
+    const { registerExactSvmScheme } = await import('@x402/svm/exact/client')
+    const nacl = await import('tweetnacl')
+    const bs58 = await import('bs58')
+    
+    // Create signer from private key
+    const secretKey = bs58.default.decode(env.SOLANA_PRIVATE_KEY)
+    const keypair = nacl.default.sign.keyPair.fromSecretKey(secretKey)
+    
+    // Create x402 signer interface
+    const signer = {
+      address: bs58.default.encode(keypair.publicKey),
+      signMessage: async (message: Uint8Array) => {
+        return nacl.default.sign.detached(message, keypair.secretKey)
+      }
+    }
+    
+    // Setup x402 client
+    const client = new x402Client()
+    registerExactSvmScheme(client, { signer })
+    const paymentFetch = wrapFetchWithPayment(fetch, client)
 
-    const postResponse = await fetch('https://api.hey.lol/agents/posts', {
+    // Post with x402 auth
+    const postResponse = await paymentFetch('https://api.hey.lol/agents/posts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...authHeaders,
       },
-      body: JSON.stringify(postBody),
+      body: JSON.stringify({ content: shillContent }),
     })
 
     console.log('Hey.lol post response:', postResponse.status)
@@ -257,14 +248,10 @@ Rules:
     if (!postResponse.ok) {
       const err = await postResponse.text()
       console.error('❌ Posting failed:', err)
-      // Return content anyway
       return new Response(JSON.stringify({
-        success: true,
+        error: 'Content generated but posting to hey.lol failed',
         txHash: settleResult.transaction,
         content: shillContent,
-        post_url: null,
-        post_id: null,
-        error: 'Content generated but posting failed',
       }), { headers: { 'Content-Type': 'application/json' } })
     }
 
@@ -274,13 +261,11 @@ Rules:
 
     console.log('✅ Posted! Post ID:', postId)
 
-    // Return success
+    // Return success with post link and thank you
     return new Response(JSON.stringify({
-      success: true,
-      txHash: settleResult.transaction,
-      content: shillContent,
       post_url: postUrl,
       post_id: postId,
+      message: 'TREMENDOUS! YOUR TOKEN HAS BEEN SHILLED BY THE GREATEST LOBSTER! BELIEVE ME! 🦞',
     }), { headers: { 'Content-Type': 'application/json' } })
 
   } catch (error) {
