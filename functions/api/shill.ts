@@ -207,28 +207,20 @@ Rules:
     const shillContent = result.choices?.[0]?.message?.content || 'TREMENDOUS TOKEN!'
     console.log('✅ Generated:', shillContent.substring(0, 100))
 
-    // Post to hey.lol using x402 client (following exact pattern from skill.md)
-    console.log('📤 Setting up x402 client for hey.lol posting...')
+    // Post to hey.lol using pure JS x402 implementation (no Node.js deps!)
+    console.log('📤 Posting to hey.lol with x402...')
     
-    const { wrapFetchWithPayment } = await import('@x402/fetch')
-    const { x402Client } = await import('@x402/core/client')
-    const { registerExactSvmScheme } = await import('@x402/svm/exact/client')
-    const { createKeyPairSignerFromBytes } = await import('@solana/kit')
-    const bs58 = await import('bs58')
+    const { x402Fetch } = await import('../x402-solana-worker')
     
-    const signer = await createKeyPairSignerFromBytes(bs58.default.decode(env.SOLANA_PRIVATE_KEY))
-    const client = new x402Client()
-    registerExactSvmScheme(client, { signer })
-    const paymentFetch = wrapFetchWithPayment(fetch, client)
-
-    console.log('📤 Posting to hey.lol...')
-    const postResponse = await paymentFetch('https://api.hey.lol/agents/posts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    const postResponse = await x402Fetch(
+      'https://api.hey.lol/agents/posts',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: shillContent }),
       },
-      body: JSON.stringify({ content: shillContent }),
-    })
+      env.SOLANA_PRIVATE_KEY
+    )
 
     console.log('Hey.lol post response:', postResponse.status)
 
