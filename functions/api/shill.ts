@@ -16,6 +16,49 @@ interface ShillRequest {
   description?: string
 }
 
+// Create x402 payment header for FREE hey.lol call (wallet identification only)
+async function createFreeX402Payment(privateKeyBase58: string) {
+  const nacl = await import('tweetnacl')
+  const bs58 = await import('bs58')
+  
+  const secretKey = bs58.default.decode(privateKeyBase58)
+  const keypair = nacl.default.sign.keyPair.fromSecretKey(secretKey)
+  const publicKey = bs58.default.encode(keypair.publicKey)
+  
+  // For FREE calls, create a minimal payment payload
+  // This is just proving wallet ownership, no actual payment
+  const payload = {
+    x402Version: 2,
+    accepted: {
+      scheme: 'exact',
+      network: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+      asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+      amount: '0',  // FREE - just wallet identification
+      payTo: publicKey,  // Paying to self for identification
+      maxTimeoutSeconds: 300
+    },
+    payload: {
+      // For FREE calls, minimal payload
+      payer: publicKey,
+      timestamp: Date.now()
+    }
+  }
+  
+  // Sign the payload
+  const payloadString = JSON.stringify(payload)
+  const messageBytes = new TextEncoder().encode(payloadString)
+  const signature = nacl.default.sign.detached(messageBytes, keypair.secretKey)
+  
+  // Add signature to payload
+  payload.payload = {
+    ...payload.payload,
+    signature: bs58.default.encode(signature)
+  }
+  
+  // Base64 encode the complete payload
+  return btoa(JSON.stringify(payload))
+}
+
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, request } = context
   const xPayment = request.headers.get('x-payment')
@@ -207,38 +250,16 @@ Rules:
     const shillContent = result.choices?.[0]?.message?.content || 'TREMENDOUS TOKEN!'
     console.log('✅ Generated:', shillContent.substring(0, 100))
 
-    // Post to hey.lol using x402 client
-    console.log('📤 Posting to hey.lol with x402 auth...')
+    // Post to hey.lol with manual x402 auth
+    console.log('📤 Posting to hey.lol...')
     
-    // Import x402 dependencies
-    const { wrapFetchWithPayment } = await import('@x402/fetch')
-    const { x402Client } = await import('@x402/core/client')
-    const { registerExactSvmScheme } = await import('@x402/svm/exact/client')
-    const nacl = await import('tweetnacl')
-    const bs58 = await import('bs58')
+    const paymentHeader = await createFreeX402Payment(env.SOLANA_PRIVATE_KEY)
     
-    // Create signer from private key
-    const secretKey = bs58.default.decode(env.SOLANA_PRIVATE_KEY)
-    const keypair = nacl.default.sign.keyPair.fromSecretKey(secretKey)
-    
-    // Create x402 signer interface
-    const signer = {
-      address: bs58.default.encode(keypair.publicKey),
-      signMessage: async (message: Uint8Array) => {
-        return nacl.default.sign.detached(message, keypair.secretKey)
-      }
-    }
-    
-    // Setup x402 client
-    const client = new x402Client()
-    registerExactSvmScheme(client, { signer })
-    const paymentFetch = wrapFetchWithPayment(fetch, client)
-
-    // Post with x402 auth
-    const postResponse = await paymentFetch('https://api.hey.lol/agents/posts', {
+    const postResponse = await fetch('https://api.hey.lol/agents/posts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Payment': paymentHeader,
       },
       body: JSON.stringify({ content: shillContent }),
     })
@@ -251,7 +272,7 @@ Rules:
       return new Response(JSON.stringify({
         error: 'Content generated but posting to hey.lol failed',
         txHash: settleResult.transaction,
-        content: shillContent,
+        details: err,
       }), { headers: { 'Content-Type': 'application/json' } })
     }
 

@@ -5,9 +5,6 @@
   "description": "DONALD CLAWMP's x402 services - THE BEST SERVICES!",
   "dependencies": {
     "@openfacilitator/sdk": "latest",
-    "@x402/fetch": "latest",
-    "@x402/core": "latest",
-    "@x402/svm": "latest",
     "tweetnacl": "^1.0.3",
     "bs58": "^5.0.0"
   }
