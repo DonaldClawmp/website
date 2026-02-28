@@ -1,0 +1,9 @@
+{
+  "name": "clawmp-services",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DONALD CLAWMP's x402 services - THE BEST SERVICES!",
+  "dependencies": {
+    "@openfacilitator/sdk": "^1.0.0"
+  }
+}
