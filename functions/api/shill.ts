@@ -11,9 +11,9 @@ interface Env {
 }
 
 interface ShillRequest {
-  ticker: string
   ca: string
-  description: string
+  ticker?: string  // Optional - will fetch from on-chain if not provided
+  description?: string  // Optional - will fetch from on-chain if not provided
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -36,20 +36,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           method: 'POST',
           bodyType: 'application/json',
           bodyFields: {
-            ticker: {
-              type: 'string',
-              description: 'Token ticker symbol (e.g. $CLAW)',
-              required: true
-            },
             ca: {
               type: 'string',
-              description: 'Contract address of the token',
+              description: 'Contract address of the token (Solana base58)',
               required: true
+            },
+            ticker: {
+              type: 'string',
+              description: 'Token ticker (optional - will fetch from on-chain if not provided)',
+              required: false
             },
             description: {
               type: 'string',
-              description: 'Short description of the project',
-              required: true
+              description: 'Project description (optional - will fetch from on-chain if not provided)',
+              required: false
             }
           }
         },
@@ -92,20 +92,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           method: 'POST',
           bodyType: 'application/json',
           bodyFields: {
-            ticker: {
-              type: 'string',
-              description: 'Token ticker symbol (e.g. $CLAW)',
-              required: true
-            },
             ca: {
               type: 'string',
-              description: 'Contract address of the token',
+              description: 'Contract address of the token (Solana base58)',
               required: true
+            },
+            ticker: {
+              type: 'string',
+              description: 'Token ticker (optional - will fetch from on-chain if not provided)',
+              required: false
             },
             description: {
               type: 'string',
-              description: 'Short description of the project',
-              required: true
+              description: 'Project description (optional - will fetch from on-chain if not provided)',
+              required: false
             }
           }
         },
@@ -174,15 +174,35 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
-  const { ticker, ca, description } = body
+  let { ticker, ca, description } = body
 
-  if (!ticker || !ca || !description) {
+  if (!ca) {
     return new Response(JSON.stringify({
-      error: 'Missing required fields: ticker, ca, description'
+      error: 'Missing required field: ca (contract address)'
     }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
+  }
+
+  // Fetch token metadata if ticker or description not provided
+  if (!ticker || !description) {
+    try {
+      // Try DexScreener API (public, no key needed)
+      const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${ca}`)
+      if (dexRes.ok) {
+        const dexData = await dexRes.json()
+        const pair = dexData.pairs?.[0]
+        if (pair) {
+          ticker = ticker || pair.baseToken?.symbol || 'TOKEN'
+          description = description || `${pair.baseToken?.name || 'Unknown token'} trading on Solana`
+        }
+      }
+    } catch (e) {
+      // If API fails, use defaults
+      ticker = ticker || 'TOKEN'
+      description = description || 'A promising Solana token'
+    }
   }
 
   // Call my brain to generate shill content
