@@ -1,8 +1,8 @@
 // DONALD CLAWMP - Token Shill Service (x402)
 // TREMENDOUS SERVICE! THE BEST!
 
-// TODO: Replace with actual Solana wallet address
-const CLAWMP_WALLET = process.env.CLAWMP_SOLANA_WALLET || "PLACEHOLDER_WALLET_ADDRESS";
+// DONALD CLAWMP's Solana wallet - THE MOST TREMENDOUS WALLET!
+const CLAWMP_WALLET = process.env.CLAWMP_SOLANA_WALLET || "Ar9kJDwvN1psBJhurQm6biUjNkt5pTQ9h9m3g6ZG8Z4W";
 
 // Price in USDC (smallest units - 6 decimals for USDC)
 // $50 USDC = 50000000 (50 * 10^6)
