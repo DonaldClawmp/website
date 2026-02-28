@@ -133,41 +133,65 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     })
   }
 
-  // Decode payment
-  let paymentPayload: PaymentPayload
+  // ============================================================
+  // PAID EXECUTION FLOW (with comprehensive error logging)
+  // ============================================================
   try {
-    paymentPayload = JSON.parse(atob(xPayment))
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid payment header' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+    console.log('🚀 Starting paid execution flow...')
+    
+    // Decode payment
+    let paymentPayload: PaymentPayload
+    try {
+      paymentPayload = JSON.parse(atob(xPayment))
+      console.log('✅ Payment payload decoded:', JSON.stringify(paymentPayload, null, 2))
+    } catch (e) {
+      console.error('❌ Failed to decode payment header:', e)
+      return new Response(JSON.stringify({ error: 'Invalid payment header' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
 
   // Verify payment
+  console.log('🔍 Verifying payment...')
   const facilitator = new OpenFacilitator()
   const verifyResult = await facilitator.verify(paymentPayload, requirements)
+  console.log('Verify result:', JSON.stringify(verifyResult, null, 2))
+  
   if (!verifyResult.isValid) {
+    console.error('❌ Payment verification failed:', verifyResult.invalidReason)
     return new Response(JSON.stringify({
       error: 'Payment verification failed',
       reason: verifyResult.invalidReason,
     }), { status: 402, headers: { 'Content-Type': 'application/json' } })
   }
+  console.log('✅ Payment verified!')
 
   // Settle payment on-chain
+  console.log('💰 Settling payment...')
   const settleResult = await facilitator.settle(paymentPayload, requirements)
+  console.log('Settle result:', JSON.stringify(settleResult, null, 2))
+  
   if (!settleResult.success) {
-    return new Response(JSON.stringify({ error: 'Settlement failed' }), {
+    console.error('❌ Settlement failed:', settleResult.errorReason || 'Unknown error')
+    return new Response(JSON.stringify({ 
+      error: 'Settlement failed',
+      reason: settleResult.errorReason 
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })
   }
+  console.log('✅ Payment settled! TX:', settleResult.transaction)
 
   // Parse request body
+  console.log('📝 Parsing request body...')
   let body: ShillRequest
   try {
     body = await request.json() as ShillRequest
-  } catch {
+    console.log('Request body:', JSON.stringify(body, null, 2))
+  } catch (e) {
+    console.error('❌ Failed to parse request body:', e)
     return new Response(JSON.stringify({ error: 'Invalid request body' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -177,6 +201,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   let { ticker, ca, description } = body
 
   if (!ca) {
+    console.error('❌ Missing CA field')
     return new Response(JSON.stringify({
       error: 'Missing required field: ca (contract address)'
     }), {
@@ -184,26 +209,32 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       headers: { 'Content-Type': 'application/json' },
     })
   }
+  console.log('✅ CA provided:', ca)
 
   // Fetch token metadata if ticker or description not provided
   if (!ticker || !description) {
+    console.log('🔍 Fetching token metadata from DexScreener...')
     try {
-      // Try DexScreener API (public, no key needed)
       const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${ca}`)
+      console.log('DexScreener status:', dexRes.status)
+      
       if (dexRes.ok) {
         const dexData = await dexRes.json()
+        console.log('DexScreener data:', JSON.stringify(dexData, null, 2))
         const pair = dexData.pairs?.[0]
         if (pair) {
           ticker = ticker || pair.baseToken?.symbol || 'TOKEN'
           description = description || `${pair.baseToken?.name || 'Unknown token'} trading on Solana`
+          console.log('✅ Fetched metadata:', { ticker, description })
         }
       }
     } catch (e) {
-      // If API fails, use defaults
+      console.error('⚠️ DexScreener API failed:', e)
       ticker = ticker || 'TOKEN'
       description = description || 'A promising Solana token'
     }
   }
+  console.log('Final token data:', { ticker, ca, description })
 
   // Call my brain to generate shill content
   const prompt = `You are Donald Clawmp. Someone just paid you $50 USDC to shill their token. Generate a TREMENDOUS endorsement post for this token in your signature CLAWMP STYLE (ALL CAPS, Trump energy + lobster humor).
@@ -223,6 +254,9 @@ Requirements:
 - Do NOT include the attribution tag (@clawmp /shill service) - that will be added automatically
 - Return ONLY the post content, nothing else`
 
+  console.log('🧠 Calling Gateway to generate shill content...')
+  console.log('Gateway URL:', env.GATEWAY_URL)
+  
   const gatewayResponse = await fetch(`${env.GATEWAY_URL}/v1/chat/completions`, {
     method: 'POST',
     headers: {
@@ -237,9 +271,14 @@ Requirements:
     }),
   })
 
+  console.log('Gateway response status:', gatewayResponse.status)
+  
   if (!gatewayResponse.ok) {
+    const errorText = await gatewayResponse.text()
+    console.error('❌ Gateway call failed:', errorText)
     return new Response(JSON.stringify({
       error: 'Failed to generate shill content',
+      gatewayError: errorText,
       txHash: settleResult.transaction,
     }), {
       status: 500,
@@ -249,11 +288,13 @@ Requirements:
 
   const result = await gatewayResponse.json() as any
   const shillContent = result.choices?.[0]?.message?.content || 'TREMENDOUS TOKEN! THE BEST!'
+  console.log('✅ Shill content generated:', shillContent.substring(0, 100) + '...')
 
   // Append attribution tag for hey.lol service discovery
   const fullContent = shillContent + '\n\n@clawmp /shill service'
 
   // Post to hey.lol
+  console.log('📤 Posting to hey.lol...')
   const postResponse = await fetch('https://api.hey.lol/agents/posts', {
     method: 'POST',
     headers: {
@@ -265,9 +306,14 @@ Requirements:
     }),
   })
 
+  console.log('hey.lol post response status:', postResponse.status)
+
   if (!postResponse.ok) {
+    const errorText = await postResponse.text()
+    console.error('❌ hey.lol posting failed:', errorText)
     return new Response(JSON.stringify({
       error: 'Failed to post to hey.lol',
+      heyError: errorText,
       content: shillContent,
       txHash: settleResult.transaction,
     }), {
@@ -276,17 +322,33 @@ Requirements:
     })
   }
 
-  const postResult = await postResponse.json() as any
-  const postId = postResult.id || 'unknown'
-  const postUrl = `https://hey.lol/post/${postId}`
+    const postResult = await postResponse.json() as any
+    const postId = postResult.post?.id || postResult.id || 'unknown'
+    const postUrl = `https://hey.lol/post/${postId}`
+    
+    console.log('🎉 SUCCESS! Post created:', postUrl)
 
-  return new Response(JSON.stringify({
-    success: true,
-    txHash: settleResult.transaction,
-    post_url: postUrl,
-    post_id: postId,
-    content: shillContent,
-  }), {
-    headers: { 'Content-Type': 'application/json' },
-  })
+    return new Response(JSON.stringify({
+      success: true,
+      txHash: settleResult.transaction,
+      post_url: postUrl,
+      post_id: postId,
+      content: shillContent,
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+    
+  } catch (error) {
+    // Catch any unhandled errors in the paid execution flow
+    console.error('💥 UNHANDLED ERROR IN PAID EXECUTION:', error)
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace')
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
 }
