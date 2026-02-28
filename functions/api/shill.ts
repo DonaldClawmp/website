@@ -8,12 +8,38 @@ interface Env {
   GATEWAY_URL: string
   GATEWAY_TOKEN: string
   SOLANA_PRIVATE_KEY: string
+  HEYLOL_SESSION_TOKEN: string
 }
 
 interface ShillRequest {
   ca: string
   ticker?: string
   description?: string
+}
+
+// Helper to create x402 auth header
+async function createHeyLolAuth(privateKeyBase58: string, endpoint: string, body?: any) {
+  const nacl = await import('tweetnacl')
+  const bs58 = await import('bs58')
+  
+  const secretKey = bs58.default.decode(privateKeyBase58)
+  const keypair = nacl.default.sign.keyPair.fromSecretKey(secretKey)
+  const publicKey = bs58.default.encode(keypair.publicKey)
+  
+  // Create message to sign (timestamp + endpoint + body)
+  const timestamp = Date.now()
+  const message = `${timestamp}:${endpoint}:${body ? JSON.stringify(body) : ''}`
+  const messageBytes = new TextEncoder().encode(message)
+  
+  // Sign the message
+  const signature = nacl.default.sign.detached(messageBytes, keypair.secretKey)
+  const signatureB58 = bs58.default.encode(signature)
+  
+  return {
+    'X-Wallet': publicKey,
+    'X-Timestamp': timestamp.toString(),
+    'X-Signature': signatureB58,
+  }
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -45,7 +71,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         type: 'immediate',
         responseFields: {
           content: { type: 'string', description: 'The shill post content' },
-          post_id: { type: 'string', description: 'Post ID (if posted)' },
+          post_url: { type: 'string', description: 'URL to the post on hey.lol' },
+          post_id: { type: 'string', description: 'Post ID on hey.lol' },
         },
       },
     }
@@ -163,23 +190,22 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       }
     }
 
-    // Generate shill
-    const prompt = `You are Donald Clawmp. Someone just paid you to shill their token. Generate a CLAWMP-STYLE endorsement (ALL CAPS, Trump energy + lobster humor).
+    // Generate shill via Gateway (fast, just content generation)
+    const prompt = `Generate a DONALD CLAWMP token shill post. ALL CAPS, Trump energy, lobster puns.
 
 Token: ${ticker}
-CA: ${ca}  
+CA: ${ca}
 Description: ${description}
 
-Requirements:
+Rules:
 - ALL CAPS
 - Include ticker and CA
-- Enthusiastic, over-the-top
-- Trump-isms + lobster puns
+- Trump-style braggadocio
+- Ocean/lobster puns (KRILLED, SHELLFISH, WAVES, REEF, etc)
 - Under 1000 chars
-- NO attribution tag
-- ONLY the post content`
+- ONLY the post content, no attribution`
 
-    console.log('🧠 Calling Gateway...')
+    console.log('🧠 Generating shill via Gateway...')
     const gatewayResponse = await fetch(`${env.GATEWAY_URL}/v1/chat/completions`, {
       method: 'POST',
       headers: {
@@ -207,49 +233,48 @@ Requirements:
     const shillContent = result.choices?.[0]?.message?.content || 'TREMENDOUS TOKEN!'
     console.log('✅ Generated:', shillContent.substring(0, 100))
 
-    // Post to hey.lol via Gateway
-    console.log('📤 Posting to hey.lol via Gateway...')
-    const postPrompt = `SYSTEM INSTRUCTION: Use the hey.lol skill to post this content immediately. Return ONLY the post ID when done:
+    // Post directly to hey.lol (fast, no Gateway round-trip)
+    console.log('📤 Posting to hey.lol directly...')
+    
+    const postBody = { content: shillContent }
+    const authHeaders = await createHeyLolAuth(
+      env.SOLANA_PRIVATE_KEY,
+      '/agents/posts',
+      postBody
+    )
 
-${shillContent}
-
-Post now. Reply with only the post ID.`
-
-    const postResponse = await fetch(`${env.GATEWAY_URL}/v1/chat/completions`, {
+    const postResponse = await fetch('https://api.hey.lol/agents/posts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.GATEWAY_TOKEN}`,
+        ...authHeaders,
       },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4-5',
-        messages: [{ role: 'user', content: postPrompt }],
-      }),
+      body: JSON.stringify(postBody),
     })
 
-    console.log('Post response status:', postResponse.status)
+    console.log('Hey.lol post response:', postResponse.status)
 
     if (!postResponse.ok) {
       const err = await postResponse.text()
       console.error('❌ Posting failed:', err)
-      // Return content anyway since payment was settled
+      // Return content anyway
       return new Response(JSON.stringify({
         success: true,
         txHash: settleResult.transaction,
         content: shillContent,
         post_url: null,
         post_id: null,
-        error: 'Posted content generation succeeded but posting failed',
+        error: 'Content generated but posting failed',
       }), { headers: { 'Content-Type': 'application/json' } })
     }
 
     const postResult = await postResponse.json() as any
-    const postId = (postResult.choices?.[0]?.message?.content || '').trim()
+    const postId = postResult.post?.id
     const postUrl = postId ? `https://hey.lol/post/${postId}` : null
 
     console.log('✅ Posted! Post ID:', postId)
 
-    // Return success with post URL
+    // Return success
     return new Response(JSON.stringify({
       success: true,
       txHash: settleResult.transaction,
