@@ -212,7 +212,7 @@ Requirements:
       success: true,
       txHash: settleResult.transaction,
       content: shillContent,
-      note: 'Payment received! Content generated. Post this manually to hey.lol with @clawmp /shill service tag.',
+      note: 'Payment received! Content generated. Post this manually to hey.lol with @donaldclawmp /shill service tag.',
     }), { headers: { 'Content-Type': 'application/json' } })
 
   } catch (error) {
