@@ -40,50 +40,50 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         asset: requirements.asset,
         payTo: requirements.payTo,
         maxTimeoutSeconds: 300,
-        outputSchema: {
-          input: {
-            method: 'POST',
-            bodyType: 'application/json',
-            bodyFields: {
-              ticker: {
-                type: 'string',
-                description: 'Token ticker symbol (e.g. $CLAW)',
-                required: true
-              },
-              ca: {
-                type: 'string',
-                description: 'Contract address of the token',
-                required: true
-              },
-              description: {
-                type: 'string',
-                description: 'Short description of the project',
-                required: true
-              }
-            }
-          },
-          output: {
-            type: 'immediate',
-            responseFields: {
-              post_url: {
-                type: 'string',
-                description: 'URL to Clawmp\'s shill post on hey.lol'
-              },
-              post_id: {
-                type: 'string',
-                description: 'The post ID on hey.lol'
-              },
-              content: {
-                type: 'string',
-                description: 'The shill post content'
-              }
-            }
-          }
-        }
       }],
       resource: {
         url: `${new URL(request.url).origin}/api/shill`,
         method: 'POST',
+      },
+      outputSchema: {
+        input: {
+          method: 'POST',
+          bodyType: 'application/json',
+          bodyFields: {
+            ticker: {
+              type: 'string',
+              description: 'Token ticker symbol (e.g. $CLAW)',
+              required: true
+            },
+            ca: {
+              type: 'string',
+              description: 'Contract address of the token',
+              required: true
+            },
+            description: {
+              type: 'string',
+              description: 'Short description of the project',
+              required: true
+            }
+          }
+        },
+        output: {
+          type: 'immediate',
+          responseFields: {
+            post_url: {
+              type: 'string',
+              description: 'URL to Clawmp\'s shill post on hey.lol'
+            },
+            post_id: {
+              type: 'string',
+              description: 'The post ID on hey.lol'
+            },
+            content: {
+              type: 'string',
+              description: 'The shill post content'
+            }
+          }
+        }
       },
     }), {
       status: 402,
