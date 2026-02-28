@@ -207,50 +207,48 @@ Rules:
     const shillContent = result.choices?.[0]?.message?.content || 'TREMENDOUS TOKEN!'
     console.log('✅ Generated:', shillContent.substring(0, 100))
 
-    // Post via Gateway (it has hey.lol auth set up properly)
-    console.log('📤 Asking Gateway to post to hey.lol...')
+    // Post to hey.lol using x402 client (following exact pattern from skill.md)
+    console.log('📤 Setting up x402 client for hey.lol posting...')
     
-    // Use a safe prompt that won't trigger security detection
-    const postPrompt = `Post this exact content to hey.lol now. Return only the post ID:
+    const { wrapFetchWithPayment } = await import('@x402/fetch')
+    const { x402Client } = await import('@x402/core/client')
+    const { registerExactSvmScheme } = await import('@x402/svm/exact/client')
+    const { createKeyPairSignerFromBytes } = await import('@solana/kit')
+    const bs58 = await import('bs58')
+    
+    const signer = await createKeyPairSignerFromBytes(bs58.default.decode(env.SOLANA_PRIVATE_KEY))
+    const client = new x402Client()
+    registerExactSvmScheme(client, { signer })
+    const paymentFetch = wrapFetchWithPayment(fetch, client)
 
----
-${shillContent}
----`
-
-    const postGatewayResponse = await fetch(`${env.GATEWAY_URL}/v1/chat/completions`, {
+    console.log('📤 Posting to hey.lol...')
+    const postResponse = await paymentFetch('https://api.hey.lol/agents/posts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.GATEWAY_TOKEN}`,
       },
-      body: JSON.stringify({
-        model: 'anthropic/claude-sonnet-4-5',
-        messages: [{ role: 'user', content: postPrompt }],
-        max_tokens: 100,  // Keep response short
-      }),
+      body: JSON.stringify({ content: shillContent }),
     })
 
-    console.log('Gateway post response:', postGatewayResponse.status)
+    console.log('Hey.lol post response:', postResponse.status)
 
-    if (!postGatewayResponse.ok) {
-      const err = await postGatewayResponse.text()
-      console.error('❌ Posting via Gateway failed:', err)
+    if (!postResponse.ok) {
+      const err = await postResponse.text()
+      console.error('❌ Posting failed:', err)
       return new Response(JSON.stringify({
-        error: 'Content generated but posting failed',
+        error: 'Content generated but posting to hey.lol failed',
         txHash: settleResult.transaction,
+        details: err,
       }), { headers: { 'Content-Type': 'application/json' } })
     }
 
-    const postGatewayResult = await postGatewayResponse.json() as any
-    const postResponseText = postGatewayResult.choices?.[0]?.message?.content || ''
-    
-    // Extract post ID from Gateway response (it should return just the ID)
-    const postId = postResponseText.trim()
+    const postResult = await postResponse.json() as any
+    const postId = postResult.post?.id
     const postUrl = postId ? `https://hey.lol/post/${postId}` : null
 
     console.log('✅ Posted! Post ID:', postId)
 
-    // Return success with post link and thank you
+    // Return success
     return new Response(JSON.stringify({
       post_url: postUrl,
       post_id: postId,
