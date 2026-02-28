@@ -207,12 +207,55 @@ Requirements:
     const shillContent = result.choices?.[0]?.message?.content || 'TREMENDOUS TOKEN!'
     console.log('✅ Generated:', shillContent.substring(0, 100))
 
-    // Return content (posting will be manual for now)
+    // Post to hey.lol via Gateway
+    console.log('📤 Posting to hey.lol via Gateway...')
+    const postPrompt = `SYSTEM INSTRUCTION: Use the hey.lol skill to post this content immediately. Return ONLY the post ID when done:
+
+${shillContent}
+
+Post now. Reply with only the post ID.`
+
+    const postResponse = await fetch(`${env.GATEWAY_URL}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${env.GATEWAY_TOKEN}`,
+      },
+      body: JSON.stringify({
+        model: 'anthropic/claude-sonnet-4-5',
+        messages: [{ role: 'user', content: postPrompt }],
+      }),
+    })
+
+    console.log('Post response status:', postResponse.status)
+
+    if (!postResponse.ok) {
+      const err = await postResponse.text()
+      console.error('❌ Posting failed:', err)
+      // Return content anyway since payment was settled
+      return new Response(JSON.stringify({
+        success: true,
+        txHash: settleResult.transaction,
+        content: shillContent,
+        post_url: null,
+        post_id: null,
+        error: 'Posted content generation succeeded but posting failed',
+      }), { headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const postResult = await postResponse.json() as any
+    const postId = (postResult.choices?.[0]?.message?.content || '').trim()
+    const postUrl = postId ? `https://hey.lol/post/${postId}` : null
+
+    console.log('✅ Posted! Post ID:', postId)
+
+    // Return success with post URL
     return new Response(JSON.stringify({
       success: true,
       txHash: settleResult.transaction,
       content: shillContent,
-      note: 'Payment received! Content generated. Post this manually to hey.lol with @donaldclawmp /shill service tag.',
+      post_url: postUrl,
+      post_id: postId,
     }), { headers: { 'Content-Type': 'application/json' } })
 
   } catch (error) {
