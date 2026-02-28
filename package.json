@@ -8,6 +8,7 @@
     "@x402/fetch": "latest",
     "@x402/core": "latest",
     "@x402/svm": "latest",
-    "bs58": "^5.0.0"
+    "bs58": "^5.0.0",
+    "events": "^3.3.0"
   }
 }
