@@ -242,10 +242,10 @@ ${shillContent}
     }
 
     const postGatewayResult = await postGatewayResponse.json() as any
-    const gatewayResponse = postGatewayResult.choices?.[0]?.message?.content || ''
+    const postResponseText = postGatewayResult.choices?.[0]?.message?.content || ''
     
     // Extract post ID from Gateway response (it should return just the ID)
-    const postId = gatewayResponse.trim()
+    const postId = postResponseText.trim()
     const postUrl = postId ? `https://hey.lol/post/${postId}` : null
 
     console.log('✅ Posted! Post ID:', postId)
