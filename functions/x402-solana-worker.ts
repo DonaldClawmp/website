@@ -119,26 +119,53 @@ export async function x402Fetch(
   options: RequestInit,
   privateKeyBase58: string
 ): Promise<Response> {
+  console.log('🔵 x402Fetch: Making initial request to', url)
   const firstResponse = await fetch(url, options)
-  if (firstResponse.status !== 402) return firstResponse
+  console.log('🔵 x402Fetch: Initial response status:', firstResponse.status)
+  
+  if (firstResponse.status !== 402) {
+    console.log('🔵 x402Fetch: Not a 402, returning response as-is')
+    return firstResponse
+  }
   
   const requirements: any = await firstResponse.json()
+  console.log('🔵 x402Fetch: 402 response body:', JSON.stringify(requirements, null, 2))
   
   // Try both formats: accepts array (standard) or paymentRequirements (hey.lol)
   const accept = requirements.accepts?.[0] || requirements.paymentRequirements
   if (!accept) {
-    console.error('402 response:', JSON.stringify(requirements))
+    console.error('❌ x402Fetch: No payment requirements found in 402 response')
     throw new Error('No payment requirements in 402 response')
   }
+  
+  console.log('🔵 x402Fetch: Extracted payment requirements:', JSON.stringify(accept, null, 2))
+  
+  const amount = accept.amount || accept.maxAmountRequired || '0'
+  console.log('🔵 x402Fetch: Building payment with:', {
+    payTo: accept.payTo,
+    amount,
+    asset: accept.asset,
+  })
   
   const xPayment = await buildX402Payment(
     privateKeyBase58, 
     accept.payTo, 
-    accept.amount || accept.maxAmountRequired || '0', 
+    amount, 
     accept.asset
   )
+  console.log('🔵 x402Fetch: Built X-PAYMENT header (length:', xPayment.length, 'chars)')
+  
   const headers = new Headers(options.headers)
   headers.set('X-PAYMENT', xPayment)
   
-  return fetch(url, { ...options, headers })
+  console.log('🔵 x402Fetch: Making authenticated request with X-PAYMENT header')
+  const secondResponse = await fetch(url, { ...options, headers })
+  console.log('🔵 x402Fetch: Authenticated response status:', secondResponse.status)
+  
+  if (!secondResponse.ok) {
+    const errorText = await secondResponse.text()
+    console.error('❌ x402Fetch: Authenticated request failed:', errorText)
+  }
+  
+  return secondResponse
 }
