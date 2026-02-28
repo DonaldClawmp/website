@@ -300,11 +300,15 @@ Requirements:
   const { wrapFetchWithPayment } = await import('@x402/fetch')
   const { x402Client } = await import('@x402/core/client')
   const { registerExactSvmScheme } = await import('@x402/svm/exact/client')
-  const { createKeyPairSignerFromBytes } = await import('@solana/kit')
+  const { Keypair } = await import('@solana/web3.js')
   const bs58 = await import('bs58')
   
   // Create my own signer using MY private key
-  const mySigner = await createKeyPairSignerFromBytes(bs58.default.decode(env.SOLANA_PRIVATE_KEY))
+  const myKeypair = Keypair.fromSecretKey(bs58.default.decode(env.SOLANA_PRIVATE_KEY))
+  const mySigner = {
+    address: myKeypair.publicKey.toBase58(),
+    signMessage: async (message: Uint8Array) => myKeypair.sign(message)
+  }
   const myClient = new x402Client()
   registerExactSvmScheme(myClient, { signer: mySigner })
   const myPaymentFetch = wrapFetchWithPayment(fetch, myClient)
