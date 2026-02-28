@@ -4,6 +4,11 @@
   "private": true,
   "description": "DONALD CLAWMP's x402 services - THE BEST SERVICES!",
   "dependencies": {
-    "@openfacilitator/sdk": "^1.0.0"
+    "@openfacilitator/sdk": "^1.0.0",
+    "@x402/fetch": "^1.0.0",
+    "@x402/core": "^1.0.0",
+    "@x402/svm": "^1.0.0",
+    "@solana/kit": "^1.0.0",
+    "bs58": "^5.0.0"
   }
 }

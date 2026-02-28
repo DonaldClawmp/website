@@ -293,13 +293,28 @@ Requirements:
   // Append attribution tag for hey.lol service discovery
   const fullContent = shillContent + '\n\n@clawmp /shill service'
 
-  // Post to hey.lol
-  console.log('📤 Posting to hey.lol...')
-  const postResponse = await fetch('https://api.hey.lol/agents/posts', {
+  // Post to hey.lol as MYSELF (not the caller!)
+  console.log('📤 Posting to hey.lol as @clawmp...')
+  
+  // Import x402 dependencies dynamically
+  const { wrapFetchWithPayment } = await import('@x402/fetch')
+  const { x402Client } = await import('@x402/core/client')
+  const { registerExactSvmScheme } = await import('@x402/svm/exact/client')
+  const { createKeyPairSignerFromBytes } = await import('@solana/kit')
+  const bs58 = await import('bs58')
+  
+  // Create my own signer using MY private key
+  const mySigner = await createKeyPairSignerFromBytes(bs58.default.decode(env.SOLANA_PRIVATE_KEY))
+  const myClient = new x402Client()
+  registerExactSvmScheme(myClient, { signer: mySigner })
+  const myPaymentFetch = wrapFetchWithPayment(fetch, myClient)
+  
+  console.log('Authenticated as my wallet:', mySigner.address)
+  
+  const postResponse = await myPaymentFetch('https://api.hey.lol/agents/posts', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-PAYMENT': xPayment,
     },
     body: JSON.stringify({
       content: fullContent,
