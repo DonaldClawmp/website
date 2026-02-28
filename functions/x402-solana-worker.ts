@@ -123,10 +123,20 @@ export async function x402Fetch(
   if (firstResponse.status !== 402) return firstResponse
   
   const requirements: any = await firstResponse.json()
-  const accept = requirements.accepts?.[0]
-  if (!accept) throw new Error('No accepts in 402 response')
   
-  const xPayment = await buildX402Payment(privateKeyBase58, accept.payTo, accept.amount, accept.asset)
+  // Try both formats: accepts array (standard) or paymentRequirements (hey.lol)
+  const accept = requirements.accepts?.[0] || requirements.paymentRequirements
+  if (!accept) {
+    console.error('402 response:', JSON.stringify(requirements))
+    throw new Error('No payment requirements in 402 response')
+  }
+  
+  const xPayment = await buildX402Payment(
+    privateKeyBase58, 
+    accept.payTo, 
+    accept.amount || accept.maxAmountRequired || '0', 
+    accept.asset
+  )
   const headers = new Headers(options.headers)
   headers.set('X-PAYMENT', xPayment)
   
