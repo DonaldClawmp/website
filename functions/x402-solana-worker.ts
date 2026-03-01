@@ -88,6 +88,32 @@ async function buildX402Payment(
   const fullKey = bs58.decode(privateKeyBase58)
   const seed = fullKey.slice(0, 32)
   const pubkey = fullKey.length === 64 ? fullKey.slice(32) : ed25519.getPublicKey(seed)
+  
+  // For zero-amount (wallet identification only), create minimal signed transaction
+  if (amount === '0') {
+    console.log('🔵 buildX402Payment: Zero amount - creating wallet identification proof')
+    const blockhashBytes = bs58.decode(await getRecentBlockhash())
+    
+    // Minimal transaction: just signer, blockhash, no instructions
+    const message = concat([
+      new Uint8Array([1, 0, 1]),      // 1 signature required, 0 readonly signed, 1 readonly unsigned
+      encodeCompactU16(1),             // 1 account key
+      pubkey,                          // Just the signer's pubkey
+      blockhashBytes,                  // Recent blockhash
+      encodeCompactU16(0),             // 0 instructions (just proving ownership)
+    ])
+    
+    const signature = ed25519.sign(message, seed)
+    const tx = concat([encodeCompactU16(1), signature, message])
+    
+    return btoa(JSON.stringify({
+      x402Version: 2,
+      payload: { transaction: toBase64(tx) }
+    }))
+  }
+  
+  // For non-zero amount, build full SPL token transfer
+  console.log('🔵 buildX402Payment: Non-zero amount - building SPL token transfer')
   const recipientPubkey = bs58.decode(payTo)
   const mintPubkey = bs58.decode(asset)
   const senderATA = await getATA(pubkey, mintPubkey)
