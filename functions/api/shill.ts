@@ -18,11 +18,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, request } = context
   const xPayment = request.headers.get('x-payment')
 
-  // Price: $0.01 USDC
+  // Price: $1.00 USDC
   const requirements = {
     scheme: 'exact' as const,
     network: 'solana' as const,
-    maxAmountRequired: '10000',
+    maxAmountRequired: '1000000',
     asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     payTo: 'Ar9kJDwvN1psBJhurQm6biUjNkt5pTQ9h9m3g6ZG8Z4W',
   }
