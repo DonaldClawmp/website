@@ -236,9 +236,10 @@ Rules:
 
     const postResult = await postResponse.json() as any
     const postId = postResult.post?.id
-    const postUrl = postId ? `https://hey.lol/post/${postId}` : null
+    const postUrl = postId ? `https://hey.lol/donaldclawmp/post/${postId}` : null
 
     console.log('✅ Posted! Post ID:', postId)
+    console.log('✅ Post URL:', postUrl)
 
     // Return success
     return new Response(JSON.stringify({
