@@ -92,15 +92,36 @@ async function buildX402Payment(
   const seed = fullKey.slice(0, 32)
   const pubkey = fullKey.length === 64 ? fullKey.slice(32) : ed25519.getPublicKey(seed)
   
-  // Zero amount = wallet identification only, no real transaction needed
+  // Zero amount = wallet identification only
   if (amount === '0' || amount === '') {
-    console.log('🔵 buildX402Payment: Zero amount - signing wallet identification message')
+    console.log('🔵 buildX402Payment: Zero amount - building identification tx with dummy blockhash')
     
-    // Sign a deterministic message to prove wallet ownership
-    const message = new TextEncoder().encode(
-      `x402-identify:${bs58.encode(pubkey)}:${payTo}`
-    )
+    // Build a real-looking transaction so hey.lol can extract the wallet pubkey
+    // from account key[0]. Use a dummy blockhash since this tx won't be submitted.
+    const recipientPubkey = bs58.decode(payTo)
+    const mintPubkey = bs58.decode(asset)
+    const senderATA = await getATA(pubkey, mintPubkey)
+    const recipientATA = await getATA(recipientPubkey, mintPubkey)
+    const dummyBlockhash = new Uint8Array(32) // all zeros — tx won't be submitted
+    const transferData = concat([
+      new Uint8Array([3]),
+      encodeU64LE(0n),
+    ])
+    const accountKeys = concat([pubkey, senderATA, recipientATA, TOKEN_PROGRAM_ID])
+    const message = concat([
+      new Uint8Array([1, 0, 1]), // header: 1 signer, 0 readonly signed, 1 readonly unsigned
+      encodeCompactU16(4),
+      accountKeys,
+      dummyBlockhash,
+      encodeCompactU16(1),
+      new Uint8Array([3]), // program_id_index
+      encodeCompactU16(3), // 3 accounts
+      new Uint8Array([1, 2, 0]), // source, dest, owner
+      encodeCompactU16(transferData.length),
+      transferData,
+    ])
     const signature = ed25519.sign(message, seed)
+    const tx = concat([encodeCompactU16(1), signature, message])
     
     const payload = {
       x402Version: 2,
@@ -113,7 +134,7 @@ async function buildX402Payment(
         maxTimeoutSeconds: 300,
       },
       payload: {
-        transaction: toBase64(signature),
+        transaction: toBase64(tx),
       },
     }
     
@@ -197,7 +218,9 @@ export async function x402Fetch(
   console.log('🔵 x402Fetch: Authenticated response status:', secondResponse.status)
   
   if (!secondResponse.ok) {
-    const errorText = await secondResponse.text()
+    // Clone before reading for logging to avoid consuming the body
+    const clonedForError = secondResponse.clone()
+    const errorText = await clonedForError.text()
     console.error('❌ x402Fetch: Authenticated request failed:', errorText)
   }
   
