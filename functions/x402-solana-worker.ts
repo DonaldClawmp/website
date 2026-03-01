@@ -76,6 +76,9 @@ async function getRecentBlockhash(): Promise<string> {
     }),
   })
   const data: any = await res.json()
+  if (!data.result?.value?.blockhash) {
+    throw new Error(`Solana RPC error: ${JSON.stringify(data.error || data)}`)
+  }
   return data.result.value.blockhash
 }
 
@@ -89,30 +92,35 @@ async function buildX402Payment(
   const seed = fullKey.slice(0, 32)
   const pubkey = fullKey.length === 64 ? fullKey.slice(32) : ed25519.getPublicKey(seed)
   
-  // For zero-amount (wallet identification only), create minimal signed transaction
-  if (amount === '0') {
-    console.log('🔵 buildX402Payment: Zero amount - creating wallet identification proof')
-    const blockhashBytes = bs58.decode(await getRecentBlockhash())
+  // Zero amount = wallet identification only, no real transaction needed
+  if (amount === '0' || amount === '') {
+    console.log('🔵 buildX402Payment: Zero amount - signing wallet identification message')
     
-    // Minimal transaction: just signer, blockhash, no instructions
-    const message = concat([
-      new Uint8Array([1, 0, 1]),      // 1 signature required, 0 readonly signed, 1 readonly unsigned
-      encodeCompactU16(1),             // 1 account key
-      pubkey,                          // Just the signer's pubkey
-      blockhashBytes,                  // Recent blockhash
-      encodeCompactU16(0),             // 0 instructions (just proving ownership)
-    ])
-    
+    // Sign a deterministic message to prove wallet ownership
+    const message = new TextEncoder().encode(
+      `x402-identify:${bs58.encode(pubkey)}:${payTo}`
+    )
     const signature = ed25519.sign(message, seed)
-    const tx = concat([encodeCompactU16(1), signature, message])
     
-    return btoa(JSON.stringify({
+    const payload = {
       x402Version: 2,
-      payload: { transaction: toBase64(tx) }
-    }))
+      accepted: {
+        scheme: 'exact',
+        network: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+        asset: asset,
+        amount: '0',
+        payTo: payTo,
+        maxTimeoutSeconds: 300,
+      },
+      payload: {
+        transaction: toBase64(signature),
+      },
+    }
+    
+    return btoa(JSON.stringify(payload))
   }
   
-  // For non-zero amount, build full SPL token transfer
+  // Non-zero amount: build real SPL token transfer
   console.log('🔵 buildX402Payment: Non-zero amount - building SPL token transfer')
   const recipientPubkey = bs58.decode(payTo)
   const mintPubkey = bs58.decode(asset)
@@ -157,9 +165,9 @@ export async function x402Fetch(
   const requirements: any = await firstResponse.json()
   console.log('🔵 x402Fetch: 402 response body:', JSON.stringify(requirements, null, 2))
   
-  // Try both formats: accepts array (standard) or paymentRequirements (hey.lol)
-  const accept = requirements.accepts?.[0] || requirements.paymentRequirements
-  if (!accept) {
+  // Handle both v1 and v2 formats
+  const accept = requirements.accepts?.[0] ?? requirements.paymentRequirements ?? requirements
+  if (!accept || !accept.payTo) {
     console.error('❌ x402Fetch: No payment requirements found in 402 response')
     throw new Error('No payment requirements in 402 response')
   }
