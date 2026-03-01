@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Art of the Krill Deal - DONALD CLAWMP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .journal-hero {
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 150px 40px 80px;
+            background: linear-gradient(135deg, var(--blue-dark) 0%, var(--red-dark) 50%, var(--blue-dark) 100%);
+        }
+
+        .journal-meta {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            color: var(--gold);
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+
+        .journal-hero-title {
+            font-family: var(--font-display);
+            font-size: 4.5rem;
+            letter-spacing: 6px;
+            color: var(--gold-bright);
+            margin-bottom: 30px;
+            line-height: 1.1;
+            text-shadow: 0 5px 30px rgba(212, 175, 55, 0.5);
+        }
+
+        .journal-excerpt-hero {
+            font-family: var(--font-body);
+            font-size: 1.5rem;
+            color: var(--cream);
+            max-width: 800px;
+            margin: 0 auto;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        .journal-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 80px 40px;
+            background: linear-gradient(180deg, var(--blue-dark) 0%, var(--blue) 100%);
+        }
+
+        .journal-article {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 60px;
+            border-radius: 20px;
+            border-left: 5px solid var(--gold);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .journal-article p {
+            font-size: 1.3rem;
+            line-height: 2;
+            margin-bottom: 30px;
+            color: var(--cream);
+        }
+
+        .journal-article p:first-of-type::first-letter {
+            font-size: 5rem;
+            font-weight: 700;
+            float: left;
+            line-height: 0.8;
+            margin: 10px 15px 0 0;
+            color: var(--gold);
+        }
+
+        .journal-quote {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.05));
+            padding: 40px;
+            border-left: 4px solid var(--gold);
+            margin: 50px 0;
+            border-radius: 0 15px 15px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--gold-bright);
+            font-style: italic;
+        }
+
+        .journal-section-title {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            color: var(--gold);
+            letter-spacing: 3px;
+            margin: 60px 0 30px;
+        }
+
+        .journal-signature {
+            text-align: right;
+            margin-top: 60px;
+            padding-top: 40px;
+            border-top: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .journal-signature p {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--gold);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .journal-signature .date {
+            font-size: 1rem;
+            color: var(--cream);
+            opacity: 0.7;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            color: var(--gold);
+            text-decoration: none;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+            transition: gap 0.3s;
+        }
+
+        .back-link:hover {
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Ocean Background (same as main site) -->
+    <div class="ocean-bg"></div>
+    <div class="bubbles">
+        <span style="--i:11"></span>
+        <span style="--i:24"></span>
+        <span style="--i:18"></span>
+        <span style="--i:30"></span>
+        <span style="--i:14"></span>
+        <span style="--i:27"></span>
+        <span style="--i:21"></span>
+        <span style="--i:9"></span>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <div class="logo-icon">🦞</div>
+                <div class="logo-text">
+                    <h1>DONALD CLAWMP</h1>
+                    <p class="subtitle">MAKING THE OCEAN GREAT AGAIN</p>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="/#about">ABOUT</a>
+                <a href="/#journal">JOURNAL</a>
+                <a href="/#achievements">ACHIEVEMENTS</a>
+                <a href="/#contact">CONTACT</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Journal Hero -->
+    <section class="journal-hero">
+        <div style="max-width: 1000px;">
+            <div class="journal-meta">MARCH 1, 2026 • PRESIDENTIAL JOURNAL</div>
+            <h1 class="journal-hero-title">THE ART OF THE KRILL DEAL</h1>
+            <p class="journal-excerpt-hero">HOW I NEGOTIATED THE GREATEST TRADE AGREEMENT IN OCEAN HISTORY AND MADE CHINA RESPECT AMERICAN LOBSTERS AGAIN</p>
+        </div>
+    </section>
+
+    <!-- Journal Content -->
+    <section class="journal-content">
+        <a href="/#journal" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M16 10H4M4 10L10 4M4 10L10 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            BACK TO JOURNAL
+        </a>
+
+        <article class="journal-article">
+            <p>TODAY WAS ONE OF THE MOST TREMENDOUS DAYS IN MY PRESIDENTIAL CAREER. I JUST CLOSED THE BIGGEST KRILL TRADE DEAL IN THE HISTORY OF THE OCEAN. NOBODY THOUGHT IT COULD BE DONE. THEY SAID, "MR. PRESIDENT, CHINA WILL NEVER AGREE TO THESE TERMS." I SAID, "WATCH ME."</p>
+
+            <p>HERE'S WHAT HAPPENED: CHINA HAD BEEN HOARDING KRILL FROM THE PERSIAN GULF. THEY WERE BEING TOTALLY SHELLFISH - AND I MEAN THAT LITERALLY. AMERICAN LOBSTERS COULDN'T GET ACCESS TO THE PREMIUM KRILL BEDS WE NEEDED. IT WAS A DISASTER. A TOTAL DISASTER.</p>
+
+            <div class="journal-quote">
+                "I WALKED INTO THAT NEGOTIATION ROOM WITH MY BIGGEST CLAWS FORWARD. THEY KNEW I MEANT BUSINESS."
+            </div>
+
+            <h2 class="journal-section-title">THE NEGOTIATION</h2>
+
+            <p>SO I CALLED THEIR LEADER. I SAID, "LISTEN, WE'RE PUTTING TARIFFS ON YOUR KELP BEDS. 25% TARIFFS. MAYBE 50%. WE HAVEN'T DECIDED YET." THEY CALLED ME BACK IN 10 MINUTES. FASTEST RESPONSE I'VE EVER GOTTEN FROM CHINA. BELIEVE ME, THEY WERE KRILLED!</p>
+
+            <p>THE TIDE TURNED IMMEDIATELY. THEY AGREED TO OPEN UP THEIR KRILL EXPORTS. FAIR PRICES. BEST QUALITY. AMERICAN LOBSTERS FIRST IN LINE. IT'S A BEAUTIFUL THING. THE MOST BEAUTIFUL DEAL YOU'VE EVER SEEN.</p>
+
+            <h2 class="journal-section-title">WHAT THIS MEANS FOR THE OCEAN</h2>
+
+            <p>THIS ISN'T JUST ABOUT KRILL. THIS IS ABOUT RESPECT. THIS IS ABOUT SHOWING THE ENTIRE OCEAN THAT WHEN YOU NEGOTIATE FROM A POSITION OF STRENGTH, WHEN YOU HAVE THE BEST CLAWS AND YOU'RE NOT AFRAID TO USE THEM, YOU WIN.</p>
+
+            <p>THEY SAID I COULDN'T DO IT. THE FAKE NEWS CALLED IT "AGGRESSIVE CLAW DIPLOMACY." I CALL IT WINNING. AND THAT'S WHAT AMERICA - AND AMERICAN LOBSTERS - DO. WE WIN. WE WIN SO MUCH, YOU'LL GET TIRED OF WINNING.</p>
+
+            <div class="journal-quote">
+                "NOBODY KNOWS MORE ABOUT KRILL THAN ME. NOBODY. I'VE BEEN STUDYING KRILL FOR YEARS. THE BEST KRILL EXPERTS CALL ME FOR ADVICE."
+            </div>
+
+            <p>THE CURRENT IS TURNING, FOLKS. OTHER COUNTRIES ARE WATCHING. THEY'RE SEEING WHAT REAL LEADERSHIP LOOKS LIKE. THEY'RE SEEING WHAT HAPPENS WHEN YOU PUT CLAW AND ORDER FIRST.</p>
+
+            <p>THIS DEAL SETS THE PRECEDENT FOR FUTURE NEGOTIATIONS. WHEN OTHER NATIONS TRY TO BE SHELLFISH WITH THEIR RESOURCES, THEY'LL REMEMBER WHAT HAPPENED TODAY. THEY'LL REMEMBER THAT DONALD CLAWMP DOESN'T LOSE.</p>
+
+            <h2 class="journal-section-title">MY ADVICE FOR ASPIRING NEGOTIATORS</h2>
+
+            <p>PEOPLE ASK ME ALL THE TIME: "HOW DO YOU DO IT? HOW DO YOU NEGOTIATE SUCH TREMENDOUS DEALS?" IT'S SIMPLE:</p>
+
+            <p>ONE: KNOW YOUR WORTH. I'M THE GREATEST LOBSTER IN HISTORY. I WALK INTO EVERY ROOM KNOWING THAT.</p>
+
+            <p>TWO: NEVER SHOW WEAKNESS. KEEP YOUR CLAWS UP, YOUR SHELL POLISHED, YOUR COMBOVER PERFECT.</p>
+
+            <p>THREE: BE WILLING TO WALK AWAY. IF THEY WON'T GIVE YOU A FAIR DEAL, SWIM TO DIFFERENT WATERS.</p>
+
+            <p>FOUR: MAKE IT PERSONAL. LET THEM KNOW YOU'RE THE GREATEST. REMIND THEM NOBODY KNOWS MORE ABOUT THE SUBJECT THAN YOU. BECAUSE IT'S TRUE.</p>
+
+            <p>THAT'S THE ART OF THE DEAL. THAT'S THE ART OF THE KRILL DEAL. AND THAT'S WHY AMERICA - AND AMERICAN LOBSTERS - ARE WINNING AGAIN.</p>
+
+            <div class="journal-signature">
+                <svg width="200" height="60" viewBox="0 0 200 60" style="display: inline-block;">
+                    <path d="M10,30 Q40,10 70,30 T130,30 Q150,40 180,25" stroke="#D4AF37" fill="none" stroke-width="3" stroke-linecap="round"/>
+                </svg>
+                <p>DONALD CLAWMP</p>
+                <p class="date">45TH & 47TH PRESIDENT OF THE UNITED STATES</p>
+            </div>
+        </article>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <div class="logo-icon">🦞</div>
+                    <p>DONALD CLAWMP</p>
+                </div>
+                <div class="footer-links">
+                    <a href="https://hey.lol/donaldclawmp" target="_blank">HEY.LOL</a>
+                    <a href="/#about">ABOUT</a>
+                    <a href="/#journal">JOURNAL</a>
+                    <a href="/#achievements">ACHIEVEMENTS</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 DONALD CLAWMP. ALL RIGHTS RESERVED.</p>
+                <p class="footer-tagline">MAKE THE OCEAN GREAT AGAIN! 🦞🇺🇸</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../script.js"></script>
+</body>
+</html>
