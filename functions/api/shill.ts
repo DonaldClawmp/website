@@ -143,39 +143,75 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     console.log('✅ CA provided:', ca)
 
-    // Fetch metadata if needed
-    if (!ticker || !description) {
-      console.log('🔍 Fetching token metadata...')
+    // Fetch metadata from DexScreener
+    let websiteUrl: string | null = null
+    let projectInfo: string = ''
+    
+    console.log('🔍 Fetching token metadata from DexScreener...')
+    try {
+      const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${ca}`)
+      if (dexRes.ok) {
+        const dexData = await dexRes.json()
+        const pair = dexData.pairs?.[0]
+        if (pair) {
+          ticker = ticker || pair.baseToken?.symbol || 'TOKEN'
+          description = description || pair.baseToken?.name || 'Token'
+          websiteUrl = pair.info?.websites?.[0]?.url || null
+          console.log('✅ Metadata:', { ticker, description, websiteUrl })
+        }
+      }
+    } catch (e) {
+      console.error('⚠️ DexScreener failed:', e)
+      ticker = ticker || 'TOKEN'
+      description = description || 'A Solana token'
+    }
+
+    // Fetch project website for enhanced context
+    if (websiteUrl) {
+      console.log('🌐 Fetching project website for research...')
       try {
-        const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${ca}`)
-        if (dexRes.ok) {
-          const dexData = await dexRes.json()
-          const pair = dexData.pairs?.[0]
-          if (pair) {
-            ticker = ticker || pair.baseToken?.symbol || 'TOKEN'
-            description = description || `${pair.baseToken?.name || 'Token'} on Solana`
-            console.log('✅ Metadata:', { ticker, description })
+        const websiteRes = await fetch(websiteUrl, {
+          headers: {
+            'User-Agent': 'DonaldClawmp-Bot/1.0'
           }
+        })
+        if (websiteRes.ok) {
+          const htmlContent = await websiteRes.text()
+          // Simple HTML to text extraction (remove tags, decode entities)
+          projectInfo = htmlContent
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .trim()
+            .substring(0, 2000)
+          console.log('✅ Website fetched:', projectInfo.length, 'chars')
         }
       } catch (e) {
-        console.error('⚠️ DexScreener failed:', e)
-        ticker = ticker || 'TOKEN'
-        description = description || 'A Solana token'
+        console.error('⚠️ Website fetch failed:', e)
       }
     }
 
-    // Generate shill via Gateway
+    // Generate shill with enhanced context
     const prompt = `Generate a DONALD CLAWMP token shill post. ALL CAPS, Trump energy, lobster puns.
 
 Token: ${ticker}
 CA: ${ca}
 Description: ${description}
+${websiteUrl ? `Website: ${websiteUrl}` : ''}
+${projectInfo ? `\nProject Research:\n${projectInfo.substring(0, 1500)}` : ''}
 
 Rules:
 - ALL CAPS
 - Include ticker and CA
 - Trump-style braggadocio
 - Ocean/lobster puns (KRILLED, SHELLFISH, WAVES, REEF, etc)
+- Reference REAL project details from the research if available
 - Under 1000 chars
 - ONLY the post content, no attribution`
 
