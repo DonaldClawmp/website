@@ -12,8 +12,6 @@ interface Env {
 
 interface ShillRequest {
   ca: string
-  ticker?: string
-  description?: string
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
@@ -37,8 +35,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         bodyType: 'application/json',
         bodyFields: {
           ca: { type: 'string', description: 'Contract address (Solana base58)', required: true },
-          ticker: { type: 'string', description: 'Token ticker (optional)', required: false },
-          description: { type: 'string', description: 'Description (optional)', required: false },
         },
       },
       output: {
@@ -132,7 +128,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     }
 
-    let { ticker, ca, description } = body
+    const { ca } = body
 
     if (!ca) {
       return new Response(JSON.stringify({ error: 'Missing required field: ca' }), {
@@ -144,6 +140,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     console.log('✅ CA provided:', ca)
 
     // Fetch metadata from DexScreener
+    let ticker: string = 'TOKEN'
+    let description: string = 'Token'
     let websiteUrl: string | null = null
     let projectInfo: string = ''
     
@@ -154,16 +152,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         const dexData = await dexRes.json()
         const pair = dexData.pairs?.[0]
         if (pair) {
-          ticker = ticker || pair.baseToken?.symbol || 'TOKEN'
-          description = description || pair.baseToken?.name || 'Token'
+          ticker = pair.baseToken?.symbol || 'TOKEN'
+          description = pair.baseToken?.name || 'Token'
           websiteUrl = pair.info?.websites?.[0]?.url || null
           console.log('✅ Metadata:', { ticker, description, websiteUrl })
         }
       }
     } catch (e) {
       console.error('⚠️ DexScreener failed:', e)
-      ticker = ticker || 'TOKEN'
-      description = description || 'A Solana token'
     }
 
     // Fetch project website for enhanced context
