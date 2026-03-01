@@ -1,5 +1,5 @@
 // DONALD CLAWMP - Repost Service (x402)
-// GET THE CLAWMP SIGNAL BOOST! $0.01 USDC!
+// GET THE CLAWMP SIGNAL BOOST! $1.00 USDC!
 
 import { OpenFacilitator } from '@openfacilitator/sdk'
 import type { PaymentPayload } from '@openfacilitator/sdk'
@@ -16,11 +16,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, request } = context
   const xPayment = request.headers.get('x-payment')
 
-  // Price: $0.01 USDC (testing price)
+  // Price: $1.00 USDC
   const requirements = {
     scheme: 'exact' as const,
     network: 'solana' as const,
-    maxAmountRequired: '10000',
+    maxAmountRequired: '1000000',
     asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     payTo: 'Ar9kJDwvN1psBJhurQm6biUjNkt5pTQ9h9m3g6ZG8Z4W',
   }
