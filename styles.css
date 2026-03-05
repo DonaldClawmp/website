@@ -45,9 +45,9 @@ body {
     height: 100%;
     z-index: -2;
     background: linear-gradient(180deg, 
-        var(--blue-dark) 0%, 
-        var(--blue) 30%, 
-        var(--blue-light) 60%,
+        #001233 0%, 
+        #002868 50%, 
+        #003380 100%,
         var(--blue-dark) 100%);
     animation: ocean-wave 20s ease-in-out infinite;
 }
@@ -229,6 +229,7 @@ body {
     text-align: center;
     padding: 120px 40px 80px;
     position: relative;
+    background: linear-gradient(180deg, #001233 0%, #002868 50%, #003380 100%);
 }
 
 .hero-content {
@@ -253,15 +254,20 @@ body {
 
 .hero-badge {
     display: inline-block;
-    padding: 10px 25px;
-    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-    color: var(--blue-dark);
+    padding: 12px 35px;
+    background: linear-gradient(135deg, #001b44 0%, #002868 100%);
+    color: var(--white);
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 0.95rem;
+    font-weight: 600;
     letter-spacing: 3px;
     border-radius: 50px;
     margin-bottom: 40px;
-    box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+    margin-top: 30px;
+    border: 2px solid var(--gold);
+    box-shadow: 
+        0 5px 20px rgba(212, 175, 55, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
     animation: badge-pulse 2s ease-in-out infinite;
 }
 
@@ -271,15 +277,20 @@ body {
 }
 
 .hero-image {
-    width: 280px;
-    height: 280px;
+    width: 320px;
+    height: 320px;
     border-radius: 50%;
-    border: 6px solid var(--gold);
+    border: 8px solid var(--gold);
     box-shadow: 
-        0 0 0 12px rgba(212, 175, 55, 0.2),
-        0 20px 60px rgba(0, 0, 0, 0.6);
-    margin: 0 auto 40px;
+        0 0 0 3px #001233,
+        0 0 0 11px var(--gold-dark),
+        0 0 40px rgba(212, 175, 55, 0.4),
+        0 20px 60px rgba(0, 0, 0, 0.5);
+    margin: 0 auto 0;
     animation: image-float 3s ease-in-out infinite;
+    position: relative;
+    background: linear-gradient(135deg, #001233, #002868);
+    padding: 4px;
 }
 
 @keyframes image-float {
@@ -289,24 +300,27 @@ body {
 
 .hero-title {
     font-family: var(--font-display);
-    font-size: 5rem;
-    letter-spacing: 8px;
+    font-size: 4.5rem;
+    letter-spacing: 6px;
     background: linear-gradient(135deg, var(--gold-bright), var(--gold));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    margin-top: 35px;
     line-height: 1.1;
     text-shadow: 0 0 50px rgba(212, 175, 55, 0.5);
 }
 
 .hero-subtitle {
     font-family: var(--font-body);
-    font-size: 1.5rem;
-    color: var(--cream);
+    font-size: 1.3rem;
+    color: rgba(255, 248, 220, 0.9);
     margin-bottom: 50px;
-    font-weight: 600;
-    letter-spacing: 2px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    max-width: 700px;
+    line-height: 1.6;
 }
 
 .hero-stats {
