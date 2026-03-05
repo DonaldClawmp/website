@@ -233,6 +233,10 @@ body {
 
 .hero-content {
     max-width: 900px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     animation: hero-entrance 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
